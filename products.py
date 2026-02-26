@@ -26,6 +26,7 @@ class Product:
         self.price = price
         self.quantity = quantity
         self.active = True
+        self.promotion = None  # Startet ohne Rabatt-Logik
 
     # Getter function for quantity.
     # Returns the quantity (int).
@@ -58,8 +59,8 @@ class Product:
     # Example:
     # "MacBook Air M2, Price: 1450, Quantity: 100"
     def show(self):
-        # ARCHITEKTUR-HINWEIS: Für f-strings in Tests nutzen wir return oder print
-        return f"{self.name}, Price: {self.price}, Quantity: {self.quantity}"
+        promo_text = f", Promotion: {self.promotion.name}" if self.promotion else ""
+        return f"{self.name}, Price: {self.price}, Quantity: {self.quantity}{promo_text}"
 
     # Buys a given quantity of the product.
     # Returns the total price (float) of the purchase.
@@ -76,13 +77,24 @@ class Product:
             # GEÄNDERT: ValueError statt Exception, passend zum pytest.raises im Test
             raise ValueError("Not enough quantity in stock")
 
-        total_price = float(quantity * self.price)
+        #Falls eine Promotion existiert, berechnet diese den Preis
+        if self.promotion:
+            total_price = self.promotion.apply_promotion(self, quantity)
+        else:
+            total_price = float(quantity * self.price)
+
         self.quantity -= quantity
 
         if self.quantity == 0:
             self.active = False
 
         return total_price
+
+    def get_promotion(self):
+        return self.promotion
+
+    def set_promotion(self, promotion):
+        self.promotion = promotion
 
 
 class NonStockedProduct(Product):
@@ -96,8 +108,8 @@ class NonStockedProduct(Product):
         super().__init__(name, price, quantity=0)
 
     def show(self):
-        # Überschreibt die Anzeige: Keine Mengenangabe sinnvoll
-        return f"{self.name}, Price: {self.price}, Quantity: Unlimited"
+        promo_text = f", Promotion: {self.promotion.name}" if self.promotion else ""
+        return f"{self.name}, Price: {self.price}, Quantity: Unlimited{promo_text}"
 
     def buy(self, quantity):
         # Logik-Anpassung: Digitale Produkte können immer gekauft werden,
@@ -118,8 +130,8 @@ class LimitedProduct(Product):
         self.maximum = maximum
 
     def show(self):
-        # Zeigt das zusätzliche Limit in der Beschreibung an
-        return f"{self.name}, Price: {self.price}, Quantity: {self.quantity}, Limited to {self.maximum} per order"
+        promo_text = f", Promotion: {self.promotion.name}" if self.promotion else ""
+        return f"{self.name}, Price: {self.price}, Quantity: {self.quantity}, Limited to {self.maximum} per order{promo_text}"
 
     def buy(self, quantity):
         # ARCHITEKTUR-CHECK: Erst das Limit prüfen, dann die Lagerlogik der Elternklasse

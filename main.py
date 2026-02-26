@@ -1,5 +1,9 @@
 from products import Product, NonStockedProduct, LimitedProduct
+
 from store import Store
+
+import promotions
+
 
 
 # setup initial stock of inventory
@@ -12,6 +16,17 @@ def stock_of_inventory():
         NonStockedProduct("Windows License", price=125),
         LimitedProduct("Shipping", price=10, quantity=250, maximum=1)
     ]
+
+    # 1. Erstelle den Katalog der verfügbaren Promotions
+    second_half_price = promotions.SecondHalfPrice("Second Half price!")
+    third_one_free = promotions.ThirdOneFree("Third One Free!")
+    thirty_percent = promotions.PercentDiscount("30% off!", percent=30)
+
+    # 2. Weise die Promotions den Produkten zu (Injektion)
+    product_list[0].set_promotion(second_half_price)  # Mac
+    product_list[1].set_promotion(third_one_free)  # Bose
+    product_list[3].set_promotion(thirty_percent)  # Windows
+
     return Store(product_list)
 
 
@@ -21,7 +36,7 @@ def list_products(best_buy):
     print("------")
     number = 1
     for product in products:
-        print(f"{number}. {product.name}, Price: ${product.price}, Quantity: {product.quantity}")
+        print(f"{number}. {product.show()}")
         number += 1
     print("------")
 
@@ -81,6 +96,12 @@ def start(best_buy):
                     print("Error adding product!\n")
                     continue
 
+                # Wir prüfen hier sofort das Limit, BEVOR wir es zur Liste hinzufügen
+                if isinstance(chosen_product, LimitedProduct):
+                    if amount > chosen_product.maximum:
+                        print(f"Error: Only {chosen_product.maximum} allowed for this item!\n")
+                        continue
+
                 # Prevent ordering more than available when same product is added multiple times
                 already_requested = 0
                 for product, qty in shopping_list:
@@ -99,8 +120,12 @@ def start(best_buy):
                 try:
                     total_price = best_buy.order(shopping_list)
                     print(f"Order cost: {total_price} dollars.")
+                except ValueError as e:
+                    # Zeigt dem User genau, WARUM es nicht geklappt hat (z.B. Limit überschritten)
+                    print(f"Order failed: {e}\n")
                 except Exception:
-                    print("Error adding product!\n")
+                    # Sicherheitsnetz für alle anderen, unvorhergesehenen Fehler
+                    print("An unexpected error occurred!\n")
 
         elif user_input == "4":
             break
