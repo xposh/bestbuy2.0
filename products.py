@@ -85,6 +85,50 @@ class Product:
         return total_price
 
 
+class NonStockedProduct(Product):
+    """
+    Subklasse für digitale Produkte ohne Lagerbestand.
+    Die Menge ist fest auf 0 fixiert.
+    """
+
+    def __init__(self, name, price):
+        # Nutzt den Konstruktor der Elternklasse, setzt quantity aber fest auf 0
+        super().__init__(name, price, quantity=0)
+
+    def show(self):
+        # Überschreibt die Anzeige: Keine Mengenangabe sinnvoll
+        return f"{self.name}, Price: {self.price}, Quantity: Unlimited"
+
+    def buy(self, quantity):
+        # Logik-Anpassung: Digitale Produkte können immer gekauft werden,
+        # solange sie aktiv sind. Die Menge im Lager reduziert sich nicht.
+        if not self.active:
+            raise ValueError("Product is not active")
+
+        return float(quantity * self.price)
+
+
+class LimitedProduct(Product):
+    """
+    Subklasse für Produkte mit einer maximalen Bestellmenge pro Kauf (z.B. Versand).
+    """
+
+    def __init__(self, name, price, quantity, maximum):
+        super().__init__(name, price, quantity)
+        self.maximum = maximum
+
+    def show(self):
+        # Zeigt das zusätzliche Limit in der Beschreibung an
+        return f"{self.name}, Price: {self.price}, Quantity: {self.quantity}, Limited to {self.maximum} per order"
+
+    def buy(self, quantity):
+        # ARCHITEKTUR-CHECK: Erst das Limit prüfen, dann die Lagerlogik der Elternklasse
+        if quantity > self.maximum:
+            raise ValueError(f"Order quantity exceeds maximum limit of {self.maximum}")
+
+        # Nutzt die bestehende Logik von Product.buy() für die Bestandsreduzierung
+        return super().buy(quantity)
+
 # ---------- TEST CODE ----------
 
 if __name__ == "__main__":
