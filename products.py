@@ -14,6 +14,14 @@ class Product:
     """
 
     def __init__(self, name, price, quantity):
+        # LOGIK-FIX: Hier wird geprüft, bevor das Objekt im RAM belegt wird
+        if not name:
+            raise ValueError("Name cannot be empty")
+        if price < 0:
+            raise ValueError("Price cannot be negative")
+        if quantity < 0:
+            raise ValueError("Quantity cannot be negative")
+
         self.name = name
         self.price = price
         self.quantity = quantity
@@ -22,14 +30,16 @@ class Product:
     # Getter function for quantity.
     # Returns the quantity (int).
     def get_quantity(self):
-        return self.quantity
+        return int(self.quantity)
 
     # Setter function for quantity.
     # If quantity reaches 0, deactivates the product.
     def set_quantity(self, quantity):
         self.quantity = quantity
-        if quantity == 0:
+        if self.quantity <= 0:
             self.active = False
+        else:
+            self.active = True
 
     # Getter function for active.
     # Returns True if the product is active, otherwise False.
@@ -48,7 +58,8 @@ class Product:
     # Example:
     # "MacBook Air M2, Price: 1450, Quantity: 100"
     def show(self):
-        print(f"{self.name}, Price: {self.price}, Quantity: {self.quantity}")
+        # ARCHITEKTUR-HINWEIS: Für f-strings in Tests nutzen wir return oder print
+        return f"{self.name}, Price: {self.price}, Quantity: {self.quantity}"
 
     # Buys a given quantity of the product.
     # Returns the total price (float) of the purchase.
@@ -56,16 +67,17 @@ class Product:
     # In case of a problem, raises an Exception.
     def buy(self, quantity):  # float
         if not self.active:
-            raise Exception("Product is not active")
+            raise ValueError("Product is not active")
 
         if quantity <= 0:
-            raise Exception("Quantity must be greater than zero")
+            raise ValueError("Quantity must be greater than zero")
 
         if quantity > self.quantity:
-            raise Exception("Not enough quantity in stock")
+            # GEÄNDERT: ValueError statt Exception, passend zum pytest.raises im Test
+            raise ValueError("Not enough quantity in stock")
 
-        total_price = quantity * self.price
-        self.quantity = self.quantity - quantity
+        total_price = float(quantity * self.price)
+        self.quantity -= quantity
 
         if self.quantity == 0:
             self.active = False
@@ -83,8 +95,9 @@ if __name__ == "__main__":
     print(mac.buy(100))
     print(mac.is_active())
 
-    bose.show()
-    mac.show()
+    # bose.show() gibt jetzt den String zurück
+    print(bose.show())
+    print(mac.show())
 
     bose.set_quantity(1000)
-    bose.show()
+    print(bose.show())
